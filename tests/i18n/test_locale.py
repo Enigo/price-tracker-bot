@@ -180,6 +180,53 @@ def test_production_catalog_has_operational_notice_strings() -> None:
     get_translation.cache_clear()
 
 
+@pytest.mark.parametrize(
+    ("key", "italian"),
+    [
+        ("📭 You have no tracked products.", "📭 Non hai prodotti tracciati."),
+        ("<b>📦 Your products ({count})</b>", "<b>📦 I tuoi prodotti ({count})</b>"),
+        ("📊 Price history", "📊 Storico prezzi"),
+        ("🔍 Check prices", "🔍 Controlla prezzi"),
+        ("◀️ Settings", "◀️ Impostazioni"),
+    ],
+)
+def test_production_catalog_keeps_english_source_and_italian_translation(
+    key: str,
+    italian: str,
+) -> None:
+    """Main product-list and submenu keys are translated by the selected locale."""
+    get_translation.cache_clear()
+    assert get_translation("en").gettext(key) == key
+    assert get_translation("it_IT").gettext(key) == italian
+    get_translation.cache_clear()
+
+
+def test_english_production_catalog_has_no_italian_command_aliases() -> None:
+    """Active English catalog entries must recommend English command names."""
+    from pathlib import Path
+
+    from babel.messages.pofile import read_po
+
+    aliases = ("/riattiva", "/lista", "/intervallo", "/errori", "/esporta", "/soglia")
+    po_path = (
+        Path(msgs_mod.__file__).parent.parent / "locale" / "en" / "LC_MESSAGES" / "messages.po"
+    )
+    with po_path.open(encoding="utf-8") as stream:
+        catalog = read_po(stream, locale="en")
+
+    leaks: list[tuple[str, str]] = []
+    for message in catalog:
+        if not message.id:
+            continue
+        msgids = message.id if isinstance(message.id, tuple) else (message.id,)
+        msgstrs = message.string if isinstance(message.string, tuple) else (message.string,)
+        for value in (*msgids, *msgstrs):
+            if value and any(alias in value for alias in aliases):
+                leaks.append((str(message.id), value))
+
+    assert leaks == []
+
+
 def _operational_event(
     *,
     reason: str = "listing_gone",

@@ -210,7 +210,7 @@ class AmazonScraper(AbstractScraper):
 
         html = await _fetch_amazon_page(url, client, extra_headers=extra_headers)
         if not html:
-            return ProductInfo(error="Impossibile caricare la pagina Amazon")
+            return ProductInfo(error="Unable to load Amazon page")
 
         soup = BeautifulSoup(html, "lxml")
         info = ProductInfo()
@@ -278,7 +278,7 @@ class AmazonScraper(AbstractScraper):
                 info.seller = None
 
         if info.price is None:
-            info.error = "Prezzo non trovato (prodotto non disponibile?)"
+            info.error = "Price not found (product unavailable?)"
 
         return info
 

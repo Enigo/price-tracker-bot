@@ -218,7 +218,7 @@ def format_warning_notice(group: NoticeGroup) -> str:
     remaining = len(group.events) - MAX_LISTED_PRODUCTS
     if remaining > 0:
         lines.append(_("… and {k} more").format(k=remaining))
-    lines.extend(("", _("Details with /errori.")))
+    lines.extend(("", _("Details with /errors.")))
     return "\n".join(lines)
 
 
@@ -289,23 +289,36 @@ def format_alert(alert: PriceAlert) -> str:
     drop = old - new
     drop_pct = (drop / old * 100) if old > 0 else Decimal("0")
 
-    return (
-        f"📉 <b>Price drop!</b>\n\n"
-        f"<b>{name}</b>\n"
-        f'<a href="{url}">View product</a>\n\n'
-        f"Was: <s>{old} {sym}</s>\n"
-        f"Now: <b>{new} {sym}</b>\n"
-        f"Drop: -{drop} {sym} ({drop_pct:.1f}%)"
+    return _(
+        "📉 <b>Price drop!</b>\n\n"
+        "<b>{name}</b>\n"
+        '<a href="{url}">View product</a>\n\n'
+        "Was: <s>{old} {symbol}</s>\n"
+        "Now: <b>{new} {symbol}</b>\n"
+        "Drop: -{drop} {symbol} ({percent:.1f}%)"
+    ).format(
+        name=name,
+        url=url,
+        old=old,
+        new=new,
+        symbol=sym,
+        drop=drop,
+        percent=drop_pct,
     )
 
 
 def format_back_in_stock(*, product_name: str, url: str, price: Decimal, currency: str) -> str:
     """Announce that a previously sold-out listing is purchasable again."""
-    return (
-        f"📦 <b>Back in stock!</b>\n\n"
-        f"<b>{_escape_html(product_name)}</b>\n"
-        f'<a href="{_escape_html(url)}">View product</a>\n\n'
-        f"Price: <b>{price} {_currency_symbol(currency)}</b>"
+    return _(
+        "📦 <b>Back in stock!</b>\n\n"
+        "<b>{name}</b>\n"
+        '<a href="{url}">View product</a>\n\n'
+        "Price: <b>{price} {symbol}</b>"
+    ).format(
+        name=_escape_html(product_name),
+        url=_escape_html(url),
+        price=price,
+        symbol=_currency_symbol(currency),
     )
 
 
@@ -318,12 +331,12 @@ def format_error_notification(
 ) -> str:
     """Format an alert for a product that has hit max consecutive errors."""
     name = _escape_html(product.get("name") or product.get("url", "?"))
-    return (
-        f"⚠️ <b>Tracking suspended</b>\n\n"
-        f"<b>{name}</b>\n"
-        f"Failed {error_count}/{max_errors} consecutive checks. "
-        f"Use /reactivate to retry."
-    )
+    return _(
+        "⚠️ <b>Tracking suspended</b>\n\n"
+        "<b>{name}</b>\n"
+        "Failed {error_count}/{max_errors} consecutive checks. "
+        "Use /reactivate to retry."
+    ).format(name=name, error_count=error_count, max_errors=max_errors)
 
 
 def format_quarantine_notification(
@@ -339,12 +352,17 @@ def format_quarantine_notification(
     """
     until = ""
     if locked_until is not None:
-        until = f"\n🔁 Riprovo da solo dopo: {locked_until:%Y-%m-%d %H:%M} UTC"
-    return (
-        f"🔒 <b>Sito in pausa automatica</b>\n\n"
-        f"<b>{_escape_html(domain)}</b> ha fallito troppi controlli "
-        f"({_escape_html(reason)}).\n"
-        f"Sospendo temporaneamente i check su questo sito per non insistere "
-        f"contro un blocco.{until}\n\n"
-        f"Dettagli con /errori."
+        until = _("\n🔁 Automatic retry after: {date} UTC").format(
+            date=locked_until.strftime("%Y-%m-%d %H:%M")
+        )
+    return _(
+        "🔒 <b>Site automatically paused</b>\n\n"
+        "<b>{domain}</b> failed too many checks ({reason}).\n"
+        "Checks for this site are temporarily paused to avoid repeatedly "
+        "hitting a block.{until}\n\n"
+        "Details with /errors."
+    ).format(
+        domain=_escape_html(domain),
+        reason=_escape_html(reason),
+        until=until,
     )

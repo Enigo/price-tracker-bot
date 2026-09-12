@@ -114,7 +114,7 @@ class PlaywrightFallbackScraper(AbstractScraper):
                 continue
 
         if info.price is None:
-            info.error = "Prezzo non trovato (anche via Playwright)"
+            info.error = "Price not found (including Playwright fallback)"
         else:
             logger.info("Playwright fallback recovered price %s for %s", info.price, url[:60])
         return info

@@ -111,6 +111,23 @@ def _(text: str) -> str:
     return _translation_var.get().gettext(text)
 
 
+def localize_error(text: str) -> str:
+    """Translate known scraper errors while preserving unknown diagnostic text."""
+    known = {
+        "Unable to load Amazon page": _("Unable to load Amazon page"),
+        "Price not found (product unavailable?)": _("Price not found (product unavailable?)"),
+        "Unable to load eBay page": _("Unable to load eBay page"),
+        "Price not found on eBay": _("Price not found on eBay"),
+        "Price not found (Nove25)": _("Price not found (Nove25)"),
+        "Price not found (Shopify)": _("Price not found (Shopify)"),
+        "Price not found on page": _("Price not found on page"),
+        "Price not found (including Playwright fallback)": _(
+            "Price not found (including Playwright fallback)"
+        ),
+    }
+    return known.get(text, text)
+
+
 def ngettext(singular: str, plural: str, n: int) -> str:
     """Plural-aware translation per current ContextVar locale."""
     return _translation_var.get().ngettext(singular, plural, n)

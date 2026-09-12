@@ -80,10 +80,10 @@ class EbayScraper(AbstractScraper):
             html = await _fetch_ebay_html(url, client)
         except (httpx.HTTPError, ValueError) as e:
             logger.warning("eBay fetch failed for %s: %s", url[:60], e)
-            return ProductInfo(error="Impossibile caricare la pagina eBay")
+            return ProductInfo(error="Unable to load eBay page")
 
         if not html:
-            return ProductInfo(error="Impossibile caricare la pagina eBay")
+            return ProductInfo(error="Unable to load eBay page")
 
         soup = BeautifulSoup(html, "lxml")
         info = ProductInfo()
@@ -103,7 +103,7 @@ class EbayScraper(AbstractScraper):
             info.name = self._extract_name(soup)
 
         if info.price is None:
-            info.error = "Prezzo non trovato su eBay"
+            info.error = "Price not found on eBay"
 
         return info
 

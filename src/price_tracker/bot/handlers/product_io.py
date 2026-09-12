@@ -39,7 +39,7 @@ async def cmd_export(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     products = await db.get_all_products(user_id)
 
     if not products:
-        await update.message.reply_text(_("📭 Non hai prodotti da esportare."))
+        await update.message.reply_text(_("📭 You have no products to export."))
         return
 
     buf = io.StringIO()
@@ -78,7 +78,7 @@ async def cmd_export(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     filename = f"prodotti_{datetime.now().strftime('%Y%m%d')}.csv"
     await update.message.reply_document(
         document=InputFile(io.BytesIO(csv_bytes), filename=filename),
-        caption=f"📊 {len(products)} prodotti esportati.",
+        caption=_("📊 {count} products exported.").format(count=len(products)),
     )
 
 
@@ -88,16 +88,18 @@ async def cmd_import(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     """Import products from a CSV file."""
     if not update.message.document:
         await update.message.reply_text(
-            "📁 <b>Importa prodotti da CSV</b>\n\n"
-            "Invia un file CSV (esportato con /esporta) come allegato.\n"
-            "I prodotti duplicati (stesso URL) verranno saltati.",
+            _(
+                "📁 <b>Import products from CSV</b>\n\n"
+                "Send a CSV file (exported with /export) as an attachment.\n"
+                "Duplicate products (same URL) will be skipped."
+            ),
             parse_mode=ParseMode.HTML,
         )
         return
 
     doc = update.message.document
     if not doc.file_name or not doc.file_name.endswith(".csv"):
-        await update.message.reply_text(_("❌ Il file deve essere un CSV."))
+        await update.message.reply_text(_("❌ The file must be a CSV."))
         return
 
     file = await context.bot.get_file(doc.file_id)
@@ -108,7 +110,7 @@ async def cmd_import(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     try:
         reader = csv.DictReader(io.StringIO(buf.read().decode("utf-8")))
     except Exception as e:  # noqa: BLE001 — surface parse error to user
-        await update.message.reply_text(f"❌ Errore nel parsing del CSV: {e}")
+        await update.message.reply_text(_("❌ Error parsing the CSV: {error}").format(error=e))
         return
 
     db = _db(context)
@@ -119,7 +121,7 @@ async def cmd_import(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     skipped = 0
     errors = 0
 
-    msg = await update.message.reply_text(_("⏳ Importazione in corso..."))
+    msg = await update.message.reply_text(_("⏳ Import in progress..."))
 
     from price_tracker.core.url_utils import (  # noqa: PLC0415
         UnsafeURLError,
@@ -191,12 +193,12 @@ async def cmd_import(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
             logger.error("Import error for %s: %s", url[:60], e)
             errors += 1
 
-    lines = ["📁 <b>Importazione completata</b>"]
-    lines.append(f"✅ Importati: {imported}")
+    lines = [_("📁 <b>Import complete</b>")]
+    lines.append(_("✅ Imported: {count}").format(count=imported))
     if skipped:
-        lines.append(f"⏭️ Duplicati saltati: {skipped}")
+        lines.append(_("⏭️ Duplicates skipped: {count}").format(count=skipped))
     if errors:
-        lines.append(f"❌ Errori: {errors}")
+        lines.append(_("❌ Errors: {count}").format(count=errors))
     await msg.edit_text(chr(10).join(lines), parse_mode=ParseMode.HTML)
 
 
